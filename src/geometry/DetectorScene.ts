@@ -51,12 +51,12 @@ function polygonPrism(points: Array<[number, number]>): THREE.BufferGeometry {
     ([x, y], [pointX, pointY]) => [x + pointX / points.length, y + pointY / points.length],
     [0, 0]
   );
-  // Leave a narrow visual separator between neighbouring chips/modules.
-  // The inset is deliberately small so the modules still read as a complete
-  // detector ring at normal dashboard zoom.
+  // Keep only a hairline divider between chips. The visible gap between
+  // complete disk modules is applied later by matrixFor(), around the common
+  // module origin, so it does not pull the individual chips apart.
   const inset = points.map(([x, y]) => [
-    centre[0] + (x - centre[0]) * 0.96,
-    centre[1] + (y - centre[1]) * 0.96,
+    centre[0] + (x - centre[0]) * 0.995,
+    centre[1] + (y - centre[1]) * 0.995,
   ] as [number, number]);
   const shape = new THREE.Shape();
   inset.forEach(([x, y], index) => {
@@ -265,7 +265,12 @@ function matrixFor(module: ModuleDescriptor): THREE.Matrix4 {
   const rotation = new THREE.Quaternion().setFromEuler(
     new THREE.Euler(0, 0, module.rotationZ)
   );
-  const scale = new THREE.Vector3(...module.size);
+  const moduleInset = module.subdetector === 'TBPX' ? 1 : 0.96;
+  const scale = new THREE.Vector3(
+    module.size[0] * moduleInset,
+    module.size[1] * moduleInset,
+    module.size[2]
+  );
   return new THREE.Matrix4().compose(position, rotation, scale);
 }
 

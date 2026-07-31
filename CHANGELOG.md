@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.5
+
+- Apply disk spacing around each complete module while retaining only a thin
+  divider between its internal chips.
+
 ## 0.1.4
 
 - Make the disk-module separators visible at the complete-detector zoom level.
