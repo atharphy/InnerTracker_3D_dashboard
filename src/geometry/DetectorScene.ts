@@ -51,8 +51,8 @@ function polygonPrism(points: Array<[number, number]>): THREE.BufferGeometry {
     [0, 0]
   );
   const inset = points.map(([x, y]) => [
-    centre[0] + (x - centre[0]) * 0.975,
-    centre[1] + (y - centre[1]) * 0.975,
+    centre[0] + (x - centre[0]) * 0.995,
+    centre[1] + (y - centre[1]) * 0.995,
   ] as [number, number]);
   const shape = new THREE.Shape();
   inset.forEach(([x, y], index) => {

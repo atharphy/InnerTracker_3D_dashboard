@@ -138,6 +138,22 @@ describe('buildDetectorGeometry', () => {
     )).toBe(true);
   });
 
+  it('sizes disk wedges to meet their exact angular boundaries', () => {
+    const diskModules = modules.filter((module) => module.subdetector !== 'TBPX');
+    expect(diskModules.every((module) => {
+      const ratio = module.wedgeInnerRatio!;
+      const radius = Math.hypot(module.position[0], module.position[1]);
+      const outerRadius = (2 * radius) / (1 + ratio);
+      const config = module.subdetector === 'TFPX'
+        ? DEFAULT_GEOMETRY.TFPX
+        : DEFAULT_GEOMETRY.TEPX;
+      const ring = config.rings[module.ring! - 1];
+      const angularPitch = Math.PI / ring.modulesPerHalf;
+      const expectedWidth = 2 * outerRadius * Math.tan(angularPitch / 2);
+      return Math.abs(module.size[0] - expectedWidth) < 1e-12;
+    })).toBe(true);
+  });
+
   it('alternates the four- and five-module barrel sides by layer', () => {
     const expected = [
       { minus: 4, plus: 5 },
