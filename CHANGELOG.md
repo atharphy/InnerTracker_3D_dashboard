@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.4
+
+- Make the disk-module separators visible at the complete-detector zoom level.
+
 ## 0.1.3
 
 - Add a narrow, consistent separator between neighbouring disk modules.
