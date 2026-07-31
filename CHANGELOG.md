@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.13
+
+- Add a hollow metallic beam pipe along the detector axis with subtle joint
+  collars, annular end faces, physical highlights and soft shadows.
+
 ## 0.1.12
 
 - Upgrade detector supports to a high-resolution procedural PCB material with

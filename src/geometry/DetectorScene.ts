@@ -523,6 +523,7 @@ export class DetectorScene {
   private readonly elements = new Map<string, ElementMesh>();
   private readonly supports: SupportMesh[] = [];
   private readonly dividers: DividerMesh[] = [];
+  private readonly beamPipe = new THREE.Group();
   private readonly outline: THREE.LineSegments;
   private readonly resizeObserver: ResizeObserver;
   private options: InnerTracker3DOptions;
@@ -581,6 +582,7 @@ export class DetectorScene {
     this.addSupportStructures();
     this.addDetectorMeshes();
     this.addChipDividers();
+    this.addBeamPipe();
     this.addBeamAxis();
     this.resetCamera();
 
@@ -806,6 +808,81 @@ export class DetectorScene {
       this.dividers.push({ mesh, visibilityKey, sectionKey });
       this.scene.add(mesh);
     }
+  }
+
+  private addBeamPipe(): void {
+    const length = 9.25;
+    const outerRadius = 0.052;
+    const innerRadius = 0.043;
+    const outerMaterial = new THREE.MeshPhysicalMaterial({
+      color: 0xb7aa82,
+      metalness: 0.72,
+      roughness: 0.3,
+      clearcoat: 0.28,
+      clearcoatRoughness: 0.3,
+      side: THREE.DoubleSide,
+    });
+    const innerMaterial = new THREE.MeshStandardMaterial({
+      color: 0x20262b,
+      metalness: 0.25,
+      roughness: 0.76,
+      side: THREE.BackSide,
+    });
+    const ringMaterial = new THREE.MeshPhysicalMaterial({
+      color: 0x8d8060,
+      metalness: 0.82,
+      roughness: 0.27,
+      clearcoat: 0.18,
+    });
+
+    const outerGeometry = new THREE.CylinderGeometry(
+      outerRadius,
+      outerRadius,
+      length,
+      48,
+      1,
+      true
+    );
+    const outer = new THREE.Mesh(outerGeometry, outerMaterial);
+    outer.rotation.x = Math.PI / 2;
+    outer.castShadow = true;
+    outer.receiveShadow = true;
+    this.beamPipe.add(outer);
+
+    const innerGeometry = new THREE.CylinderGeometry(
+      innerRadius,
+      innerRadius,
+      length + 0.012,
+      48,
+      1,
+      true
+    );
+    const inner = new THREE.Mesh(innerGeometry, innerMaterial);
+    inner.rotation.x = Math.PI / 2;
+    this.beamPipe.add(inner);
+
+    // Narrow reinforcing collars give the pipe scale and definition without
+    // obscuring the detector modules behind it.
+    for (const z of [-4.56, -3.1, -1.55, 0, 1.55, 3.1, 4.56]) {
+      const ringGeometry = new THREE.TorusGeometry(outerRadius * 1.07, 0.005, 10, 48);
+      const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+      ring.position.z = z;
+      ring.castShadow = true;
+      this.beamPipe.add(ring);
+    }
+
+    // Annular end faces make the hollow bore clear when viewing along Z.
+    for (const z of [-length / 2, length / 2]) {
+      const faceGeometry = new THREE.RingGeometry(innerRadius, outerRadius, 48);
+      const face = new THREE.Mesh(faceGeometry, ringMaterial);
+      face.position.z = z;
+      face.rotation.y = z < 0 ? Math.PI : 0;
+      this.beamPipe.add(face);
+    }
+
+    this.beamPipe.name = 'beam-pipe';
+    this.beamPipe.renderOrder = 1;
+    this.scene.add(this.beamPipe);
   }
 
   private addBeamAxis(): void {
@@ -1041,6 +1118,14 @@ export class DetectorScene {
       divider.mesh.geometry.dispose();
       (divider.mesh.material as THREE.Material).dispose();
     }
+    this.beamPipe.traverse((object) => {
+      if (!(object instanceof THREE.Mesh)) {
+        return;
+      }
+      object.geometry.dispose();
+      const materials = Array.isArray(object.material) ? object.material : [object.material];
+      materials.forEach((material) => material.dispose());
+    });
     (this.outline.geometry as THREE.BufferGeometry).dispose();
     (this.outline.material as THREE.Material).dispose();
     Object.values(this.boardTextures).forEach((texture) => texture.dispose());
