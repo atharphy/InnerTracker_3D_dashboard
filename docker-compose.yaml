@@ -1,0 +1,18 @@
+services:
+  grafana:
+    image: grafana/grafana:13.1.0
+    ports:
+      - "${GRAFANA_PORT:-3301}:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: atharphy-cmsitinnertracker3d-panel
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./dist:/var/lib/grafana/plugins/atharphy-cmsitinnertracker3d-panel
+      - ./provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./provisioning/dashboards/provider.yaml:/etc/grafana/provisioning/dashboards/provider.yaml
+      - ./provisioning/dashboards/cmsit-inner-tracker-3d.json:/var/lib/grafana/dashboards/cmsit-inner-tracker-3d.json

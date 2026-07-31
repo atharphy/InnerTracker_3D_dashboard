@@ -1,0 +1,151 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 28,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "aggregation": "mean",
+        "badColor": "#e24d42",
+        "detailsDashboardUid": "cmsit-parts-chip-details",
+        "deviation": 2,
+        "geometryOverridesJson": "",
+        "goodColor": "#329b62",
+        "hardwareMappingJson": "{\"0/0/0\":{\"subdetector\":\"TBPX\",\"layer\":3,\"signed_ladder\":1,\"z_side\":\"z+\",\"module_index\":1}}",
+        "noDataColor": "#2b333d",
+        "nominalValue": 20,
+        "rememberVisibility": true,
+        "selectedColor": "#f2c96d",
+        "showBeamAxis": true
+      },
+      "pluginVersion": "0.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "cmsit_monitor_value{register=~\"$register\"}",
+          "instant": false,
+          "legendFormat": "{{board}}/{{optical_group}}/{{hybrid}} chip {{chip}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Complete Inner Tracker 3D",
+      "type": "atharphy-cmsitinnertracker3d-panel"
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 42,
+  "tags": [
+    "CMSIT",
+    "Inner Tracker",
+    "3D"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": "INTERNAL_NTC_REL",
+          "value": "INTERNAL_NTC_REL"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "definition": "label_values(cmsit_monitor_value, register)",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Register",
+        "multi": false,
+        "name": "register",
+        "options": [],
+        "query": {
+          "query": "label_values(cmsit_monitor_value, register)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": "18",
+          "value": "18"
+        },
+        "description": "Enter a number or None for no lower bound.",
+        "hide": 0,
+        "label": "Low limit",
+        "name": "low_limit",
+        "options": [
+          {
+            "selected": true,
+            "text": "18",
+            "value": "18"
+          }
+        ],
+        "query": "18",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": "22",
+          "value": "22"
+        },
+        "description": "Enter a number or None for no upper bound.",
+        "hide": 0,
+        "label": "High limit",
+        "name": "high_limit",
+        "options": [
+          {
+            "selected": true,
+            "text": "22",
+            "value": "22"
+          }
+        ],
+        "query": "22",
+        "skipUrlSync": false,
+        "type": "textbox"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "CMSIT Inner Tracker 3D",
+  "uid": "cmsit-inner-tracker-3d",
+  "version": 1,
+  "weekStart": ""
+}

@@ -1,0 +1,24 @@
+{
+  "$schema": "https://raw.githubusercontent.com/grafana/grafana/main/docs/sources/developers/plugins/plugin.schema.json",
+  "type": "panel",
+  "name": "CMSIT Inner Tracker 3D",
+  "id": "atharphy-cmsitinnertracker3d-panel",
+  "info": {
+    "keywords": ["cmsit", "inner tracker", "3d", "prometheus", "detector"],
+    "description": "Interactive full-detector 3D visualization for CMS Inner Tracker monitoring.",
+    "author": {
+      "name": "Athar Ahmad"
+    },
+    "logos": {
+      "small": "img/logo.svg",
+      "large": "img/logo.svg"
+    },
+    "screenshots": [],
+    "version": "%VERSION%",
+    "updated": "%TODAY%"
+  },
+  "dependencies": {
+    "grafanaDependency": ">=12.3.0",
+    "plugins": []
+  }
+}
