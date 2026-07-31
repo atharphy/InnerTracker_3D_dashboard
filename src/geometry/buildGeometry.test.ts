@@ -113,14 +113,29 @@ describe('buildDetectorGeometry', () => {
     expect(minusOuter!.rotationY).toBe(0);
   });
 
-  it('uses the corrected 180-degree disk wedge orientation', () => {
+  it('points the narrow edge of every disk wedge towards the beam opening', () => {
     const diskModules = modules.filter((module) => module.subdetector !== 'TBPX');
     expect(diskModules.every((module) => {
       const theta = Math.atan2(module.position[1], module.position[0]);
       const difference = module.rotationZ - theta;
-      return Math.abs(Math.sin(difference) - 1) < 1e-12
+      return Math.abs(Math.sin(difference) + 1) < 1e-12
         && Math.abs(Math.cos(difference)) < 1e-12;
     })).toBe(true);
+  });
+
+  it('changes the disk wedge taper with the radial ring position', () => {
+    const tepxDiskOne = modules.filter((module) =>
+      module.subdetector === 'TEPX'
+      && module.side === '+z'
+      && module.disk === 1
+      && module.half === 'upper'
+    );
+    const ringRatios = [1, 2, 3, 4, 5].map((ring) =>
+      tepxDiskOne.find((module) => module.ring === ring)!.wedgeInnerRatio!
+    );
+    expect(ringRatios.every((ratio, index) =>
+      index === 0 || ratio > ringRatios[index - 1]
+    )).toBe(true);
   });
 
   it('alternates the four- and five-module barrel sides by layer', () => {
