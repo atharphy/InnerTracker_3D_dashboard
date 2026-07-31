@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.11
+
+- Draw explicit high-contrast chip dividers on module surfaces without
+  introducing physical gaps between chips.
+
 ## 0.1.10
 
 - Send monitoring colours through an explicit per-instance GPU attribute and

@@ -26,6 +26,12 @@ interface SupportMesh {
   sectionKey: string;
 }
 
+interface DividerMesh {
+  mesh: THREE.LineSegments;
+  visibilityKey: string;
+  sectionKey: string;
+}
+
 interface DetectorSceneCallbacks {
   onHover: (hovered?: HoveredModule) => void;
   onSelect: (
@@ -76,28 +82,18 @@ function rectangularCell(
   zMin: number,
   zMax: number
 ): THREE.BoxGeometry {
-  const gap = 0.025;
-  const width = (xMax - xMin) * (1 - gap);
-  const depth = (zMax - zMin) * (1 - gap);
+  // Chips fill their complete share of the module. Their boundary is drawn
+  // separately, so only complete modules retain a physical gap.
+  const width = xMax - xMin;
+  const depth = zMax - zMin;
   const geometry = new THREE.BoxGeometry(width, 1, depth);
   geometry.translate((xMin + xMax) / 2, 0, (zMin + zMax) / 2);
   return geometry;
 }
 
 function polygonPrism(points: Array<[number, number]>): THREE.BufferGeometry {
-  const centre = points.reduce(
-    ([x, y], [pointX, pointY]) => [x + pointX / points.length, y + pointY / points.length],
-    [0, 0]
-  );
-  // Keep only a hairline divider between chips. The visible gap between
-  // complete disk modules is applied later by matrixFor(), around the common
-  // module origin, so it does not pull the individual chips apart.
-  const inset = points.map(([x, y]) => [
-    centre[0] + (x - centre[0]) * 0.995,
-    centre[1] + (y - centre[1]) * 0.995,
-  ] as [number, number]);
   const shape = new THREE.Shape();
-  inset.forEach(([x, y], index) => {
+  points.forEach(([x, y], index) => {
     if (index === 0) {
       shape.moveTo(x, y);
     } else {
@@ -167,6 +163,45 @@ function chipGeometries(module: ModuleDescriptor): THREE.BufferGeometry[] {
     return module.moduleType === 'double' ? BARREL_DOUBLE_CELLS : BARREL_QUAD_CELLS;
   }
   return diskCellGeometries(module);
+}
+
+function chipDividerSegments(module: ModuleDescriptor): THREE.Vector3[] {
+  const segments: THREE.Vector3[] = [];
+  const add = (a: THREE.Vector3, b: THREE.Vector3): void => {
+    segments.push(a, b);
+  };
+
+  if (module.subdetector === 'TBPX') {
+    // Draw the divider on both radial faces so it remains visible as the
+    // detector is rotated. Local X/Z span the module face.
+    for (const y of [-0.501, 0.501]) {
+      add(new THREE.Vector3(-0.5, y, 0), new THREE.Vector3(0.5, y, 0));
+      if (module.moduleType === 'quad') {
+        add(new THREE.Vector3(0, y, -0.5), new THREE.Vector3(0, y, 0.5));
+      }
+    }
+    return segments;
+  }
+
+  const ratio = module.wedgeInnerRatio ?? 0.72;
+  const halfAngle = module.wedgeHalfAngle ?? 0.1;
+  const inner = 0.5 * ratio;
+  const middle = (inner + 0.5) / 2;
+  const radialCentre = (1 + ratio) / 2;
+  const radialSpan = 1 - ratio;
+  const innerY = (ratio * Math.cos(halfAngle) - radialCentre) / radialSpan;
+  const outerY = (Math.cos(halfAngle) - radialCentre) / radialSpan;
+  const middleY = (innerY + outerY) / 2;
+
+  // Disk modules can be viewed from either detector side, so draw on both
+  // faces of the thin prism. The lines divide chips without opening a gap.
+  for (const z of [-0.501, 0.501]) {
+    add(new THREE.Vector3(-middle, middleY, z), new THREE.Vector3(middle, middleY, z));
+    if (module.moduleType === 'quad') {
+      add(new THREE.Vector3(0, innerY, z), new THREE.Vector3(0, outerY, z));
+    }
+  }
+  return segments;
 }
 
 function circuitBoardTexture(): THREE.CanvasTexture {
@@ -325,6 +360,7 @@ export class DetectorScene {
   private readonly pointer = new THREE.Vector2();
   private readonly elements = new Map<string, ElementMesh>();
   private readonly supports: SupportMesh[] = [];
+  private readonly dividers: DividerMesh[] = [];
   private readonly outline: THREE.LineSegments;
   private readonly resizeObserver: ResizeObserver;
   private options: InnerTracker3DOptions;
@@ -379,6 +415,7 @@ export class DetectorScene {
     this.addLighting();
     this.addSupportStructures();
     this.addDetectorMeshes();
+    this.addChipDividers();
     this.addBeamAxis();
     this.resetCamera();
 
@@ -553,6 +590,36 @@ export class DetectorScene {
         visibilityKey,
         sectionKey,
       });
+      this.scene.add(mesh);
+    }
+  }
+
+  private addChipDividers(): void {
+    const sections = new Map<string, THREE.Vector3[]>();
+    for (const module of this.modules) {
+      const matrix = matrixFor(module);
+      const transformed = chipDividerSegments(module)
+        .map((point) => point.clone().applyMatrix4(matrix));
+      const key = `${module.visibilityKey}|${module.sectionKey}`;
+      const points = sections.get(key) ?? [];
+      points.push(...transformed);
+      sections.set(key, points);
+    }
+
+    for (const [key, points] of sections) {
+      const [visibilityKey, sectionKey] = key.split('|');
+      const geometry = new THREE.BufferGeometry().setFromPoints(points);
+      const material = new THREE.LineBasicMaterial({
+        color: 0x8aa19d,
+        transparent: true,
+        opacity: 0.95,
+        depthTest: true,
+        depthWrite: false,
+        toneMapped: false,
+      });
+      const mesh = new THREE.LineSegments(geometry, material);
+      mesh.renderOrder = 4;
+      this.dividers.push({ mesh, visibilityKey, sectionKey });
       this.scene.add(mesh);
     }
   }
@@ -752,6 +819,9 @@ export class DetectorScene {
     for (const support of this.supports) {
       support.mesh.visible = visible(support.visibilityKey, support.sectionKey, visibility);
     }
+    for (const divider of this.dividers) {
+      divider.mesh.visible = visible(divider.visibilityKey, divider.sectionKey, visibility);
+    }
     this.clearHover();
   }
 
@@ -782,6 +852,10 @@ export class DetectorScene {
         ? support.mesh.material
         : [support.mesh.material];
       materials.forEach((material) => material.dispose());
+    }
+    for (const divider of this.dividers) {
+      divider.mesh.geometry.dispose();
+      (divider.mesh.material as THREE.Material).dispose();
     }
     (this.outline.geometry as THREE.BufferGeometry).dispose();
     (this.outline.material as THREE.Material).dispose();
