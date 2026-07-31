@@ -27,7 +27,11 @@ interface SupportMesh {
 
 interface DetectorSceneCallbacks {
   onHover: (hovered?: HoveredModule) => void;
-  onSelect: (module: ModuleDescriptor, chipIndex: number) => void;
+  onSelect: (
+    module: ModuleDescriptor,
+    chipIndex: number,
+    measurement?: ModuleMeasurement
+  ) => void;
 }
 
 const UNIT_BOX = new THREE.BoxGeometry(1, 1, 1);
@@ -639,7 +643,11 @@ export class DetectorScene {
     }
     const hit = this.intersect(event);
     if (hit) {
-      this.callbacks.onSelect(hit.module, hit.chipIndex);
+      this.callbacks.onSelect(
+        hit.module,
+        hit.chipIndex,
+        this.measurements.get(hit.module.id)
+      );
     }
   };
 

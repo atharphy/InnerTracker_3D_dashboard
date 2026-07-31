@@ -39,7 +39,7 @@
         "selectedColor": "#f2c96d",
         "showBeamAxis": true
       },
-      "pluginVersion": "0.1.6",
+      "pluginVersion": "0.1.8",
       "targets": [
         {
           "datasource": {
@@ -97,42 +97,42 @@
       {
         "current": {
           "selected": true,
-          "text": "18",
-          "value": "18"
+          "text": "Auto",
+          "value": "Auto"
         },
-        "description": "Enter a number or None for no lower bound.",
+        "description": "Auto uses register_limits.py; enter a number to override it, or None for no lower bound.",
         "hide": 0,
         "label": "Low limit",
         "name": "low_limit",
         "options": [
           {
             "selected": true,
-            "text": "18",
-            "value": "18"
+            "text": "Auto",
+            "value": "Auto"
           }
         ],
-        "query": "18",
+        "query": "Auto",
         "skipUrlSync": false,
         "type": "textbox"
       },
       {
         "current": {
           "selected": true,
-          "text": "22",
-          "value": "22"
+          "text": "Auto",
+          "value": "Auto"
         },
-        "description": "Enter a number or None for no upper bound.",
+        "description": "Auto uses register_limits.py; enter a number to override it, or None for no upper bound.",
         "hide": 0,
         "label": "High limit",
         "name": "high_limit",
         "options": [
           {
             "selected": true,
-            "text": "22",
-            "value": "22"
+            "text": "Auto",
+            "value": "Auto"
           }
         ],
-        "query": "22",
+        "query": "Auto",
         "skipUrlSync": false,
         "type": "textbox"
       }

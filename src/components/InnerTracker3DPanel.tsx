@@ -4,10 +4,17 @@ import { buildDetectorGeometry } from '../geometry/buildGeometry';
 import { geometryFromJson } from '../geometry/config';
 import { DetectorScene } from '../geometry/DetectorScene';
 import { mapMeasurementsToModules } from '../data/measurements';
-import { HoveredModule, InnerTracker3DOptions, ModuleDescriptor, VisibilityState } from '../types';
+import {
+  HoveredModule,
+  InnerTracker3DOptions,
+  ModuleDescriptor,
+  ModuleMeasurement,
+  VisibilityState,
+} from '../types';
 import { defaultVisibility, VisibilityTree } from './VisibilityTree';
 import { Tooltip } from './Tooltip';
 import { DEFAULT_OPTIONS } from '../defaults';
+import { effectiveRegisterLimit, REGISTER_LIMITS } from '../data/registerLimits';
 import './panel.css';
 
 const VISIBILITY_KEY = 'cmsit-inner-tracker-3d:visibility';
@@ -36,15 +43,6 @@ function loadVisibility(remember: boolean): VisibilityState {
     // Fall back to all-visible state if storage is unavailable or invalid.
   }
   return defaultVisibility();
-}
-
-function dashboardLimit(value: string): number | undefined {
-  const trimmed = value.trim().toLowerCase();
-  if (!trimmed || trimmed === 'none' || trimmed.includes('${')) {
-    return undefined;
-  }
-  const parsed = Number(trimmed);
-  return Number.isFinite(parsed) ? parsed : undefined;
 }
 
 function detailUrl(
@@ -95,8 +93,16 @@ export const InnerTracker3DPanel = ({
       ) {
         merged.noDataColor = DEFAULT_OPTIONS.noDataColor;
       }
-      merged.lowerLimit = dashboardLimit(replaceVariables('${low_limit}'));
-      merged.upperLimit = dashboardLimit(replaceVariables('${high_limit}'));
+      const register = replaceVariables('${register}');
+      const automaticLimits = REGISTER_LIMITS[register];
+      merged.lowerLimit = effectiveRegisterLimit(
+        replaceVariables('${low_limit}'),
+        automaticLimits?.lower
+      );
+      merged.upperLimit = effectiveRegisterLimit(
+        replaceVariables('${high_limit}'),
+        automaticLimits?.upper
+      );
       return merged;
     },
     [options, replaceVariables]
@@ -121,20 +127,26 @@ export const InnerTracker3DPanel = ({
     ),
     [data, modules, effectiveOptions.hardwareMappingJson, effectiveOptions.aggregation]
   );
-  const measurementsRef = useRef(measurements);
   const detailsUidRef = useRef(effectiveOptions.detailsDashboardUid);
 
   useEffect(() => {
-    measurementsRef.current = measurements;
     detailsUidRef.current = effectiveOptions.detailsDashboardUid;
-  }, [measurements, effectiveOptions.detailsDashboardUid]);
+  }, [effectiveOptions.detailsDashboardUid]);
 
-  const selectModule = useCallback((module: ModuleDescriptor, chipIndex: number) => {
-    const measurement = measurementsRef.current.get(module.id);
+  const selectModule = useCallback((
+    module: ModuleDescriptor,
+    chipIndex: number,
+    measurement?: ModuleMeasurement
+  ) => {
+    // Without a hardware key the details dashboard cannot be filtered and
+    // would misleadingly show every board/hybrid at once.
+    if (!measurement?.hardwareKeys.length) {
+      return;
+    }
     window.location.href = detailUrl(
       detailsUidRef.current,
       module,
-      measurement?.hardwareKeys ?? [],
+      measurement.hardwareKeys,
       chipIndex
     );
   }, []);

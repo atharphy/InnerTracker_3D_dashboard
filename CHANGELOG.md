@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.8
+
+- Restore the system-test hardware mapping to TBPX Layer 3 module position 1.
+- Pass the hovered live measurement directly into details navigation and do
+  not open an unfiltered details dashboard for modules without hardware data.
+
+## 0.1.7
+
+- Map the current system-test hardware to TBPX Layer 3 module position 5.
+- Add automatic standard-register limits copied from the general dashboard,
+  with editable numeric or `None` overrides for all registers.
+
 ## 0.1.6
 
 - Align TBPX signed-ladder numbering with the spatial right and left halves.
