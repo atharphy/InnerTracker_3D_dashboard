@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.10
+
+- Send monitoring colours through an explicit per-instance GPU attribute and
+  dedicated status shader for reliable live chip colouring.
+
 ## 0.1.9
 
 - Render live chip status with unlit, tone-mapping-independent materials so

@@ -12,6 +12,7 @@ import { detectorModuleShapeKey } from './buildGeometry';
 
 interface ElementMesh {
   mesh: THREE.InstancedMesh;
+  statusColors: THREE.InstancedBufferAttribute;
   modules: ModuleDescriptor[];
   chipIndices: number[];
   matrices: THREE.Matrix4[];
@@ -35,6 +36,39 @@ interface DetectorSceneCallbacks {
 }
 
 const UNIT_BOX = new THREE.BoxGeometry(1, 1, 1);
+
+function setStatusColor(
+  attribute: THREE.InstancedBufferAttribute,
+  index: number,
+  value: string
+): void {
+  new THREE.Color(value).toArray(attribute.array, index * 3);
+}
+
+function statusMaterial(): THREE.ShaderMaterial {
+  return new THREE.ShaderMaterial({
+    vertexShader: `
+      attribute vec3 statusColor;
+      varying vec3 vStatusColor;
+
+      void main() {
+        vStatusColor = statusColor;
+        vec4 instancePosition = instanceMatrix * vec4(position, 1.0);
+        gl_Position = projectionMatrix * modelViewMatrix * instancePosition;
+      }
+    `,
+    fragmentShader: `
+      varying vec3 vStatusColor;
+
+      void main() {
+        gl_FragColor = vec4(vStatusColor, 1.0);
+        #include <colorspace_fragment>
+      }
+    `,
+    side: THREE.DoubleSide,
+    toneMapped: false,
+  });
+}
 
 function rectangularCell(
   xMin: number,
@@ -487,16 +521,17 @@ export class DetectorScene {
       const [visibilityKey, sectionKey, _shapeKey, chipKey] = key.split('|');
       const elementModules = cells.map((cell) => cell.module);
       const chipIndices = cells.map((cell) => cell.chipIndex);
-      // Monitoring status is categorical information, so preserve the exact
-      // instance colour independently of camera angle and scene lighting.
-      // The surrounding PCB supports retain their shaded standard material.
-      const material = new THREE.MeshBasicMaterial({
-        color: 0xffffff,
-        vertexColors: true,
-        side: THREE.DoubleSide,
-        toneMapped: false,
-      });
-      const moduleGeometry = chipGeometries(elementModules[0])[Number(chipKey)];
+      // Use an explicit instanced status-colour attribute rather than the
+      // optional material instanceColor path. This keeps monitoring colours
+      // reliable inside Grafana's WebGL runtime.
+      const material = statusMaterial();
+      const moduleGeometry = chipGeometries(elementModules[0])[Number(chipKey)].clone();
+      const statusColors = new THREE.InstancedBufferAttribute(
+        new Float32Array(elementModules.length * 3),
+        3
+      );
+      statusColors.setUsage(THREE.DynamicDrawUsage);
+      moduleGeometry.setAttribute('statusColor', statusColors);
       const mesh = new THREE.InstancedMesh(moduleGeometry, material, elementModules.length);
       mesh.name = key;
       mesh.instanceMatrix.setUsage(THREE.StaticDrawUsage);
@@ -504,15 +539,14 @@ export class DetectorScene {
 
       matrices.forEach((matrix, index) => {
         mesh.setMatrixAt(index, matrix);
-        mesh.setColorAt(index, new THREE.Color(this.options.noDataColor));
+        setStatusColor(statusColors, index, this.options.noDataColor);
       });
-      if (mesh.instanceColor) {
-        mesh.instanceColor.needsUpdate = true;
-      }
+      statusColors.needsUpdate = true;
 
       mesh.renderOrder = 2;
       this.elements.set(key, {
         mesh,
+        statusColors,
         modules: elementModules,
         chipIndices,
         matrices,
@@ -693,24 +727,21 @@ export class DetectorScene {
         const hasChipMeasurements =
           moduleMeasurement !== undefined
           && Object.keys(moduleMeasurement.chips).length > 0;
-        element.mesh.setColorAt(
+        setStatusColor(
+          element.statusColors,
           index,
-          new THREE.Color(
-            measurementColor(
-              hasChipMeasurements ? chipMeasurement : moduleMeasurement,
-              this.options,
-              {
+          measurementColor(
+            hasChipMeasurements ? chipMeasurement : moduleMeasurement,
+            this.options,
+            {
               good: this.options.goodColor,
               bad: this.options.badColor,
               noData: this.options.noDataColor,
-              }
-            )
+            }
           )
         );
       });
-      if (element.mesh.instanceColor) {
-        element.mesh.instanceColor.needsUpdate = true;
-      }
+      element.statusColors.needsUpdate = true;
     }
   }
 
