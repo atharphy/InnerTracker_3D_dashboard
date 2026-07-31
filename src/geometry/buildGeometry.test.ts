@@ -79,6 +79,15 @@ describe('buildDetectorGeometry', () => {
     )).toBe(true);
   });
 
+  it('places positive ladders on the right and negative ladders on the left', () => {
+    const barrel = modules.filter((module) => module.subdetector === 'TBPX');
+    expect(barrel.every((module) =>
+      module.ladder! > 0
+        ? module.sectionKey.includes(':right:') && module.position[0] > 0
+        : module.sectionKey.includes(':left:') && module.position[0] < 0
+    )).toBe(true);
+  });
+
   it('places inner and outer rings on opposite disk faces', () => {
     const plusInner = modules.find((module) =>
       module.subdetector === 'TFPX'

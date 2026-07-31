@@ -28,9 +28,10 @@ function barrelModules(config: DetectorGeometryConfig): ModuleDescriptor[] {
       const signedLadder = ladderIndex < layer.halfLadders
         ? ladderIndex + 1
         : -(ladderIndex - layer.halfLadders + 1);
-      // Centre ladders within their angular cells so none straddles the
-      // Y-axis used to divide the barrel into spatial right/left halves.
-      const theta = (ladderIndex + 0.5) * angularPitch;
+      // Centre ladders within their angular cells and align the signed-ladder
+      // convention with the spatial halves: positive ladders occupy the
+      // right side of the Y-axis and negative ladders occupy the left side.
+      const theta = (ladderIndex + 0.5) * angularPitch - Math.PI / 2;
       const barrelHalf = Math.cos(theta) >= 0 ? 'right' : 'left';
 
       const addSide = (side: '+z' | '-z', count: number) => {

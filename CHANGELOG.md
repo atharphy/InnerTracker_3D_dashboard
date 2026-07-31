@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.6
+
+- Align TBPX signed-ladder numbering with the spatial right and left halves.
+
 ## 0.1.5
 
 - Apply disk spacing around each complete module while retaining only a thin

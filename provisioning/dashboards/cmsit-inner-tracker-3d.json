@@ -39,7 +39,7 @@
         "selectedColor": "#f2c96d",
         "showBeamAxis": true
       },
-      "pluginVersion": "0.1.5",
+      "pluginVersion": "0.1.6",
       "targets": [
         {
           "datasource": {
