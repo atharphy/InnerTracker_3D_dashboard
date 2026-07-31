@@ -97,44 +97,72 @@
       {
         "current": {
           "selected": true,
-          "text": "Auto",
-          "value": "Auto"
+          "text": "None",
+          "value": "None"
         },
-        "description": "Auto uses register_limits.py; enter a number to override it, or None for no lower bound.",
+        "description": "Default lower limit for INTERNAL_NTC_REL. Enter a number to override it, or None for no lower bound.",
         "hide": 0,
         "label": "Low limit",
         "name": "low_limit",
         "options": [
           {
             "selected": true,
-            "text": "Auto",
-            "value": "Auto"
+            "text": "None",
+            "value": "None"
           }
         ],
-        "query": "Auto",
+        "query": "None",
         "skipUrlSync": false,
         "type": "textbox"
       },
       {
         "current": {
           "selected": true,
-          "text": "Auto",
-          "value": "Auto"
+          "text": "20",
+          "value": "20"
         },
-        "description": "Auto uses register_limits.py; enter a number to override it, or None for no upper bound.",
+        "description": "Default upper limit for INTERNAL_NTC_REL. Enter a number to override it, or None for no upper bound.",
         "hide": 0,
         "label": "High limit",
         "name": "high_limit",
         "options": [
           {
             "selected": true,
-            "text": "Auto",
-            "value": "Auto"
+            "text": "20",
+            "value": "20"
           }
         ],
-        "query": "Auto",
+        "query": "20",
         "skipUrlSync": false,
         "type": "textbox"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": "C",
+          "value": "C"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "definition": "label_values(cmsit_monitor_value{register=\"$register\"}, unit)",
+        "description": "Unit reported by Prometheus for the selected register.",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Unit",
+        "multi": false,
+        "name": "register_unit",
+        "options": [],
+        "query": {
+          "query": "label_values(cmsit_monitor_value{register=\"$register\"}, unit)",
+          "refId": "PrometheusVariableQueryEditor-Unit"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
       }
     ]
   },

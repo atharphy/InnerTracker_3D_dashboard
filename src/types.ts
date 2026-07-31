@@ -1,4 +1,5 @@
 export type AggregationMode = 'mean' | 'max' | 'min' | 'last';
+export type CameraMode = 'rotate' | 'pan';
 
 export interface InnerTracker3DOptions {
   nominalValue: number;

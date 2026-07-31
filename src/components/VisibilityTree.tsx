@@ -1,10 +1,14 @@
 import React, { useEffect, useRef } from 'react';
-import { VisibilityState } from '../types';
+import { CameraMode, VisibilityState } from '../types';
 
 interface VisibilityTreeProps {
   value: VisibilityState;
   onChange: (value: VisibilityState) => void;
   onResetCamera: () => void;
+  cameraMode: CameraMode;
+  onCameraModeChange: (mode: CameraMode) => void;
+  beamPipeVisible: boolean;
+  onBeamPipeVisibleChange: (visible: boolean) => void;
 }
 
 interface GroupProps {
@@ -116,7 +120,15 @@ function allVisibility(enabled: boolean): VisibilityState {
   };
 }
 
-export const VisibilityTree = ({ value, onChange, onResetCamera }: VisibilityTreeProps) => (
+export const VisibilityTree = ({
+  value,
+  onChange,
+  onResetCamera,
+  cameraMode,
+  onCameraModeChange,
+  beamPipeVisible,
+  onBeamPipeVisibleChange,
+}: VisibilityTreeProps) => (
   <aside className="cmsit3d-sidebar">
     <div className="cmsit3d-sidebar-title">Inner Tracker</div>
     <div className="cmsit3d-actions">
@@ -124,6 +136,27 @@ export const VisibilityTree = ({ value, onChange, onResetCamera }: VisibilityTre
       <button type="button" onClick={() => onChange(allVisibility(false))}>Disable all</button>
     </div>
     <button type="button" className="cmsit3d-reset" onClick={onResetCamera}>Reset camera</button>
+    <div className="cmsit3d-control-title">Camera drag mode</div>
+    <div className="cmsit3d-mode-switch" role="group" aria-label="Camera drag mode">
+      <button
+        type="button"
+        className={cameraMode === 'rotate' ? 'active' : ''}
+        onClick={() => onCameraModeChange('rotate')}
+      >
+        Rotate
+      </button>
+      <button
+        type="button"
+        className={cameraMode === 'pan' ? 'active' : ''}
+        onClick={() => onCameraModeChange('pan')}
+      >
+        Move
+      </button>
+    </div>
+    <label className="cmsit3d-beam-toggle">
+      <CheckBox checked={beamPipeVisible} onChange={onBeamPipeVisibleChange} />
+      <span>Show beam pipe</span>
+    </label>
 
     <VisibilityGroup
       label="TBPX"
@@ -153,9 +186,9 @@ export const VisibilityTree = ({ value, onChange, onResetCamera }: VisibilityTre
       onPartsChange={(TEPXParts) => onChange({ ...value, TEPXParts })}
     />
     <div className="cmsit3d-help">
-      Drag to rotate<br />
+      Drag to {cameraMode === 'rotate' ? 'rotate' : 'move camera'}<br />
       Scroll to zoom<br />
-      Right-drag to pan<br />
+      Right-drag to {cameraMode === 'rotate' ? 'move camera' : 'rotate'}<br />
       Double-click to focus
     </div>
   </aside>

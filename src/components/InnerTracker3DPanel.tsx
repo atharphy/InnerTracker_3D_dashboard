@@ -1,10 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PanelProps } from '@grafana/data';
+import { locationService } from '@grafana/runtime';
 import { buildDetectorGeometry } from '../geometry/buildGeometry';
 import { geometryFromJson } from '../geometry/config';
 import { DetectorScene } from '../geometry/DetectorScene';
 import { mapMeasurementsToModules } from '../data/measurements';
 import {
+  CameraMode,
   HoveredModule,
   InnerTracker3DOptions,
   ModuleDescriptor,
@@ -110,6 +112,29 @@ export const InnerTracker3DPanel = ({
   const hostRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<DetectorScene>();
   const [hovered, setHovered] = useState<HoveredModule>();
+  const [cameraMode, setCameraMode] = useState<CameraMode>('rotate');
+  const [beamPipeVisible, setBeamPipeVisible] = useState(true);
+
+  useEffect(() => {
+    const register = replaceVariables('${register}');
+    const defaults = REGISTER_LIMITS[register];
+    const rawLow = replaceVariables('${low_limit}');
+    const rawHigh = replaceVariables('${high_limit}');
+    const updates: Record<string, string> = {};
+    if (rawLow.trim().toLowerCase() === 'auto') {
+      updates['var-low_limit'] = defaults?.lower === undefined
+        ? 'None'
+        : String(defaults.lower);
+    }
+    if (rawHigh.trim().toLowerCase() === 'auto') {
+      updates['var-high_limit'] = defaults?.upper === undefined
+        ? 'None'
+        : String(defaults.upper);
+    }
+    if (Object.keys(updates).length > 0) {
+      locationService.partial(updates, true);
+    }
+  }, [replaceVariables]);
   const [visibility, setVisibility] = useState<VisibilityState>(() =>
     loadVisibility(effectiveOptions.rememberVisibility)
   );
@@ -161,6 +186,8 @@ export const InnerTracker3DPanel = ({
     });
     sceneRef.current = scene;
     scene.setVisibility(visibility);
+    scene.setCameraMode(cameraMode);
+    scene.setBeamPipeVisible(beamPipeVisible);
     scene.updateMeasurements(measurements);
     return () => {
       scene.dispose();
@@ -189,6 +216,14 @@ export const InnerTracker3DPanel = ({
     }
   }, [visibility, effectiveOptions.rememberVisibility]);
 
+  useEffect(() => {
+    sceneRef.current?.setCameraMode(cameraMode);
+  }, [cameraMode]);
+
+  useEffect(() => {
+    sceneRef.current?.setBeamPipeVisible(beamPipeVisible);
+  }, [beamPipeVisible]);
+
   const visibleElements =
     visibility.TBPX.filter(Boolean).length
     + visibility.TFPX.filter(Boolean).length
@@ -210,6 +245,10 @@ export const InnerTracker3DPanel = ({
         value={visibility}
         onChange={setVisibility}
         onResetCamera={() => sceneRef.current?.resetCamera()}
+        cameraMode={cameraMode}
+        onCameraModeChange={setCameraMode}
+        beamPipeVisible={beamPipeVisible}
+        onBeamPipeVisibleChange={setBeamPipeVisible}
       />
       <main className="cmsit3d-viewport">
         <div ref={hostRef} className="cmsit3d-canvas" />

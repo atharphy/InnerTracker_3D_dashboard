@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.14
+
+- Add explicit Rotate and Move camera modes while preserving wheel zoom and
+  the alternate action on right-drag.
+- Add a sidebar toggle for showing or hiding the beam pipe.
+- Display resolved numeric register limits instead of `Auto` and add a compact
+  Prometheus-backed unit selector beside the limit fields.
+
 ## 0.1.13
 
 - Add a hollow metallic beam pipe along the detector axis with subtle joint

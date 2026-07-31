@@ -60,6 +60,53 @@
   border-color: #596575;
 }
 
+.cmsit3d-control-title {
+  margin: 2px 0 5px;
+  color: #9eabba;
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.cmsit3d-mode-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+  margin-bottom: 7px;
+}
+
+.cmsit3d-mode-switch button {
+  color: #ccd5df;
+  background: #303946;
+  border-color: #596575;
+}
+
+.cmsit3d-mode-switch button.active {
+  color: #fff;
+  background: var(--cmsit-purple);
+  border-color: #8664bd;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.cmsit3d-beam-toggle {
+  display: flex;
+  align-items: center;
+  min-height: 28px;
+  margin-bottom: 9px;
+  gap: 7px;
+  color: #d8dfe8;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.cmsit3d-beam-toggle input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: var(--cmsit-purple);
+}
+
 .cmsit3d-group {
   padding: 8px 0;
   border-top: 1px solid #3b4654;
@@ -141,6 +188,14 @@
 }
 
 .cmsit3d-canvas canvas:active {
+  cursor: grabbing;
+}
+
+.cmsit3d-canvas canvas[data-camera-mode='pan'] {
+  cursor: move;
+}
+
+.cmsit3d-canvas canvas[data-camera-mode='pan']:active {
   cursor: grabbing;
 }
 

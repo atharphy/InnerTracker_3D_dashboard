@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import {
+  CameraMode,
   HoveredModule,
   InnerTracker3DOptions,
   ModuleDescriptor,
@@ -562,6 +563,8 @@ export class DetectorScene {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.08;
+    this.controls.enablePan = true;
+    this.controls.screenSpacePanning = true;
     this.controls.minDistance = 1.2;
     this.controls.maxDistance = 18;
     this.controls.target.set(0, 0, 0);
@@ -1084,6 +1087,23 @@ export class DetectorScene {
       divider.mesh.visible = visible(divider.visibilityKey, divider.sectionKey, visibility);
     }
     this.clearHover();
+  }
+
+  setCameraMode(mode: CameraMode): void {
+    this.controls.mouseButtons.LEFT = mode === 'rotate'
+      ? THREE.MOUSE.ROTATE
+      : THREE.MOUSE.PAN;
+    this.controls.mouseButtons.RIGHT = mode === 'rotate'
+      ? THREE.MOUSE.PAN
+      : THREE.MOUSE.ROTATE;
+    this.controls.touches.ONE = mode === 'rotate'
+      ? THREE.TOUCH.ROTATE
+      : THREE.TOUCH.PAN;
+    this.renderer.domElement.dataset.cameraMode = mode;
+  }
+
+  setBeamPipeVisible(visible: boolean): void {
+    this.beamPipe.visible = visible;
   }
 
   resetCamera(): void {
