@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.3
+
+- Add a narrow, consistent separator between neighbouring disk modules.
+
 ## 0.1.2
 
 - Keep disk rings in separate instanced meshes so every ring uses its own

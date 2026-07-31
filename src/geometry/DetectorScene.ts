@@ -51,9 +51,12 @@ function polygonPrism(points: Array<[number, number]>): THREE.BufferGeometry {
     ([x, y], [pointX, pointY]) => [x + pointX / points.length, y + pointY / points.length],
     [0, 0]
   );
+  // Leave a narrow visual separator between neighbouring chips/modules.
+  // The inset is deliberately small so the modules still read as a complete
+  // detector ring at normal dashboard zoom.
   const inset = points.map(([x, y]) => [
-    centre[0] + (x - centre[0]) * 0.995,
-    centre[1] + (y - centre[1]) * 0.995,
+    centre[0] + (x - centre[0]) * 0.985,
+    centre[1] + (y - centre[1]) * 0.985,
   ] as [number, number]);
   const shape = new THREE.Shape();
   inset.forEach(([x, y], index) => {
