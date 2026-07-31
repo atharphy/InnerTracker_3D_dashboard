@@ -87,24 +87,34 @@ const DISK_CELL_CACHE = new Map<string, THREE.BufferGeometry[]>();
 
 function diskCellGeometries(module: ModuleDescriptor): THREE.BufferGeometry[] {
   const ratio = module.wedgeInnerRatio ?? 0.72;
-  const key = `${module.moduleType}:${ratio.toFixed(4)}`;
+  const halfAngle = module.wedgeHalfAngle ?? 0.1;
+  const key = `${module.moduleType}:${ratio.toFixed(4)}:${halfAngle.toFixed(4)}`;
   const cached = DISK_CELL_CACHE.get(key);
   if (cached) {
     return cached;
   }
   const inner = 0.5 * ratio;
   const middle = (inner + 0.5) / 2;
+  // Local coordinates are normalized by the descriptor's chord width and
+  // radial thickness. These Y coordinates place the four corners on the
+  // actual inner/outer circles at ±halfAngle, so adjacent wedges share their
+  // boundary corners exactly.
+  const radialCentre = (1 + ratio) / 2;
+  const radialSpan = 1 - ratio;
+  const innerY = (ratio * Math.cos(halfAngle) - radialCentre) / radialSpan;
+  const outerY = (Math.cos(halfAngle) - radialCentre) / radialSpan;
+  const middleY = (innerY + outerY) / 2;
   const doubleCells = [
-    polygonPrism([[-inner, -0.5], [inner, -0.5], [middle, 0], [-middle, 0]]),
-    polygonPrism([[-middle, 0], [middle, 0], [0.5, 0.5], [-0.5, 0.5]]),
+    polygonPrism([[-inner, innerY], [inner, innerY], [middle, middleY], [-middle, middleY]]),
+    polygonPrism([[-middle, middleY], [middle, middleY], [0.5, outerY], [-0.5, outerY]]),
   ];
   const cells = module.moduleType === 'double'
     ? doubleCells
     : [
-      polygonPrism([[-inner, -0.5], [0, -0.5], [0, 0], [-middle, 0]]),
-      polygonPrism([[0, -0.5], [inner, -0.5], [middle, 0], [0, 0]]),
-      polygonPrism([[-middle, 0], [0, 0], [0, 0.5], [-0.5, 0.5]]),
-      polygonPrism([[0, 0], [middle, 0], [0.5, 0.5], [0, 0.5]]),
+      polygonPrism([[-inner, innerY], [0, innerY], [0, middleY], [-middle, middleY]]),
+      polygonPrism([[0, innerY], [inner, innerY], [middle, middleY], [0, middleY]]),
+      polygonPrism([[-middle, middleY], [0, middleY], [0, outerY], [-0.5, outerY]]),
+      polygonPrism([[0, middleY], [middle, middleY], [0.5, outerY], [0, outerY]]),
     ];
   DISK_CELL_CACHE.set(key, cells);
   return cells;

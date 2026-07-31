@@ -138,7 +138,7 @@ describe('buildDetectorGeometry', () => {
     )).toBe(true);
   });
 
-  it('sizes disk wedges to meet their exact angular boundaries', () => {
+  it('uses the exact outer chord width for every disk wedge', () => {
     const diskModules = modules.filter((module) => module.subdetector !== 'TBPX');
     expect(diskModules.every((module) => {
       const ratio = module.wedgeInnerRatio!;
@@ -149,9 +149,26 @@ describe('buildDetectorGeometry', () => {
         : DEFAULT_GEOMETRY.TEPX;
       const ring = config.rings[module.ring! - 1];
       const angularPitch = Math.PI / ring.modulesPerHalf;
-      const expectedWidth = 2 * outerRadius * Math.tan(angularPitch / 2);
+      const expectedWidth = 2 * outerRadius * Math.sin(angularPitch / 2);
       return Math.abs(module.size[0] - expectedWidth) < 1e-12;
     })).toBe(true);
+  });
+
+  it('gives neighbouring disk wedges identical polar boundary corners', () => {
+    const ring = modules.filter((module) =>
+      module.subdetector === 'TEPX'
+      && module.side === '+z'
+      && module.disk === 1
+      && module.ring === 5
+    );
+    const first = ring[0];
+    const second = ring[1];
+    const firstTheta = Math.atan2(first.position[1], first.position[0]);
+    const secondTheta = Math.atan2(second.position[1], second.position[0]);
+    const sharedFromFirst = firstTheta + first.wedgeHalfAngle!;
+    const sharedFromSecond = secondTheta - second.wedgeHalfAngle!;
+    expect(Math.sin(sharedFromFirst)).toBeCloseTo(Math.sin(sharedFromSecond), 12);
+    expect(Math.cos(sharedFromFirst)).toBeCloseTo(Math.cos(sharedFromSecond), 12);
   });
 
   it('alternates the four- and five-module barrel sides by layer', () => {

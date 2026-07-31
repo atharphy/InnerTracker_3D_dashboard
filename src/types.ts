@@ -49,6 +49,7 @@ export interface ModuleDescriptor {
   size: [number, number, number];
   diskSurface?: 'inner' | 'outer';
   wedgeInnerRatio?: number;
+  wedgeHalfAngle?: number;
 }
 
 export interface ModuleMeasurement {

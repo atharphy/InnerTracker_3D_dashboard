@@ -70,9 +70,8 @@ function diskModules(subdetector: Exclude<Subdetector, 'TBPX'>, config: DiskSyst
         const radius = (inner + outer) / 2;
         const tangentialSize = Math.max(
           0.045,
-          // Exact tangent width makes neighbouring trapezoids share the same
-          // radial boundary instead of developing larger gaps at outer rings.
-          2 * outer * Math.tan(angularPitch / 2)
+          // The outer edge is the chord between the two angular boundaries.
+          2 * outer * Math.sin(angularPitch / 2)
         );
         // "Inner" faces the interaction point on both detector sides; "outer"
         // faces away from it. Multiplying by direction keeps that convention
@@ -101,6 +100,7 @@ function diskModules(subdetector: Exclude<Subdetector, 'TBPX'>, config: DiskSyst
             moduleType: ring.moduleType,
             diskSurface: ring.surface,
             wedgeInnerRatio: inner / outer,
+            wedgeHalfAngle: angularPitch / 2,
             position: [
               radius * Math.cos(theta),
               radius * Math.sin(theta),
