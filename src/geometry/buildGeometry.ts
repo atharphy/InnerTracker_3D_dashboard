@@ -108,7 +108,9 @@ function diskModules(subdetector: Exclude<Subdetector, 'TBPX'>, config: DiskSyst
             // inner/outer distinction is represented by the Z position,
             // avoiding an edge-on silhouette on the opposite detector side.
             rotationY: 0,
-            rotationZ: theta - Math.PI / 2,
+            // Flip the disk wedge 180 degrees in its plane without moving its
+            // detector position.
+            rotationZ: theta + Math.PI / 2,
             size: [tangentialSize, radialLength, 0.025],
           });
         }

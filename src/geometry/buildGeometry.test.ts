@@ -113,6 +113,16 @@ describe('buildDetectorGeometry', () => {
     expect(minusOuter!.rotationY).toBe(0);
   });
 
+  it('uses the corrected 180-degree disk wedge orientation', () => {
+    const diskModules = modules.filter((module) => module.subdetector !== 'TBPX');
+    expect(diskModules.every((module) => {
+      const theta = Math.atan2(module.position[1], module.position[0]);
+      const difference = module.rotationZ - theta;
+      return Math.abs(Math.sin(difference) - 1) < 1e-12
+        && Math.abs(Math.cos(difference)) < 1e-12;
+    })).toBe(true);
+  });
+
   it('alternates the four- and five-module barrel sides by layer', () => {
     const expected = [
       { minus: 4, plus: 5 },
