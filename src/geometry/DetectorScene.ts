@@ -32,6 +32,12 @@ interface DividerMesh {
   sectionKey: string;
 }
 
+interface BoardTextures {
+  color: THREE.CanvasTexture;
+  bump: THREE.CanvasTexture;
+  roughness: THREE.CanvasTexture;
+}
+
 interface DetectorSceneCallbacks {
   onHover: (hovered?: HoveredModule) => void;
   onSelect: (
@@ -204,61 +210,213 @@ function chipDividerSegments(module: ModuleDescriptor): THREE.Vector3[] {
   return segments;
 }
 
-function circuitBoardTexture(): THREE.CanvasTexture {
-  const canvas = document.createElement('canvas');
-  canvas.width = 256;
-  canvas.height = 256;
-  const context = canvas.getContext('2d');
-  if (!context) {
-    return new THREE.CanvasTexture(canvas);
+function circuitBoardTextures(): BoardTextures {
+  const size = 1024;
+  const colorCanvas = document.createElement('canvas');
+  const bumpCanvas = document.createElement('canvas');
+  const roughnessCanvas = document.createElement('canvas');
+  [colorCanvas, bumpCanvas, roughnessCanvas].forEach((canvas) => {
+    canvas.width = size;
+    canvas.height = size;
+  });
+  const color = colorCanvas.getContext('2d');
+  const bump = bumpCanvas.getContext('2d');
+  const roughness = roughnessCanvas.getContext('2d');
+  if (!color || !bump || !roughness) {
+    return {
+      color: new THREE.CanvasTexture(colorCanvas),
+      bump: new THREE.CanvasTexture(bumpCanvas),
+      roughness: new THREE.CanvasTexture(roughnessCanvas),
+    };
   }
 
-  context.fillStyle = '#245b46';
-  context.fillRect(0, 0, canvas.width, canvas.height);
+  // Deep green solder mask with a subtle woven substrate pattern.
+  color.fillStyle = '#174f3c';
+  color.fillRect(0, 0, size, size);
+  const maskGradient = color.createRadialGradient(512, 420, 80, 512, 512, 730);
+  maskGradient.addColorStop(0, 'rgba(76, 151, 111, 0.22)');
+  maskGradient.addColorStop(1, 'rgba(3, 34, 26, 0.18)');
+  color.fillStyle = maskGradient;
+  color.fillRect(0, 0, size, size);
+  color.strokeStyle = 'rgba(110, 184, 139, 0.08)';
+  color.lineWidth = 1;
+  for (let coordinate = 8; coordinate < size; coordinate += 16) {
+    color.beginPath();
+    color.moveTo(coordinate, 0);
+    color.lineTo(coordinate, size);
+    color.stroke();
+    color.beginPath();
+    color.moveTo(0, coordinate);
+    color.lineTo(size, coordinate);
+    color.stroke();
+  }
 
-  // A restrained PCB pattern: fine traces with occasional vias and pads.
-  context.strokeStyle = 'rgba(139, 194, 155, 0.34)';
-  context.lineWidth = 3;
-  const traces = [
-    [[0, 38], [82, 38], [108, 64], [256, 64]],
-    [[0, 116], [54, 116], [82, 88], [176, 88], [204, 116], [256, 116]],
-    [[0, 204], [118, 204], [146, 176], [256, 176]],
-    [[38, 0], [38, 74], [64, 100], [64, 256]],
-    [[176, 0], [176, 48], [202, 74], [202, 256]],
+  bump.fillStyle = '#595959';
+  bump.fillRect(0, 0, size, size);
+  roughness.fillStyle = '#c2c2c2';
+  roughness.fillRect(0, 0, size, size);
+
+  const tracePaths: Array<Array<[number, number]>> = [
+    [[0, 90], [170, 90], [220, 140], [410, 140], [462, 192], [1024, 192]],
+    [[0, 286], [128, 286], [198, 216], [470, 216], [536, 282], [1024, 282]],
+    [[0, 496], [232, 496], [302, 426], [640, 426], [708, 494], [1024, 494]],
+    [[0, 706], [186, 706], [246, 646], [542, 646], [620, 724], [1024, 724]],
+    [[0, 902], [340, 902], [398, 844], [714, 844], [772, 902], [1024, 902]],
+    [[104, 0], [104, 172], [162, 230], [162, 1024]],
+    [[354, 0], [354, 112], [412, 170], [412, 1024]],
+    [[648, 0], [648, 232], [706, 290], [706, 1024]],
+    [[892, 0], [892, 360], [836, 416], [836, 1024]],
   ];
-  traces.forEach((trace) => {
-    context.beginPath();
-    trace.forEach(([x, y], index) => {
-      if (index === 0) {
-        context.moveTo(x, y);
+  tracePaths.forEach((path, index) => {
+    const width = index % 3 === 0 ? 9 : 5;
+    color.strokeStyle = index % 2 === 0
+      ? 'rgba(130, 196, 151, 0.72)'
+      : 'rgba(87, 161, 123, 0.68)';
+    color.lineWidth = width;
+    color.lineJoin = 'round';
+    color.beginPath();
+    path.forEach(([x, y], pointIndex) => {
+      if (pointIndex === 0) {
+        color.moveTo(x, y);
       } else {
-        context.lineTo(x, y);
+        color.lineTo(x, y);
       }
     });
-    context.stroke();
+    color.stroke();
+    bump.strokeStyle = '#a8a8a8';
+    bump.lineWidth = width;
+    bump.lineJoin = 'round';
+    bump.beginPath();
+    path.forEach(([x, y], pointIndex) => {
+      if (pointIndex === 0) {
+        bump.moveTo(x, y);
+      } else {
+        bump.lineTo(x, y);
+      }
+    });
+    bump.stroke();
   });
 
-  context.fillStyle = 'rgba(207, 175, 92, 0.58)';
-  [[38, 38], [108, 64], [82, 116], [176, 88], [146, 176], [202, 116]].forEach(
-    ([x, y]) => {
-      context.beginPath();
-      context.arc(x, y, 6, 0, Math.PI * 2);
-      context.fill();
-    }
-  );
-
-  context.fillStyle = 'rgba(14, 43, 34, 0.38)';
-  for (let x = 22; x < 256; x += 58) {
-    for (let y = 22; y < 256; y += 58) {
-      context.fillRect(x, y, 18, 12);
+  // Plated vias and test pads.
+  const vias: Array<[number, number, number]> = [];
+  for (let row = 0; row < 5; row++) {
+    for (let column = 0; column < 7; column++) {
+      vias.push([70 + column * 148 + (row % 2) * 28, 64 + row * 205, (row + column) % 3 === 0 ? 10 : 7]);
     }
   }
+  vias.forEach(([x, y, radius]) => {
+    color.fillStyle = '#d5b55b';
+    color.beginPath();
+    color.arc(x, y, radius, 0, Math.PI * 2);
+    color.fill();
+    color.fillStyle = '#594c28';
+    color.beginPath();
+    color.arc(x, y, radius * 0.38, 0, Math.PI * 2);
+    color.fill();
+    bump.fillStyle = '#d2d2d2';
+    bump.beginPath();
+    bump.arc(x, y, radius, 0, Math.PI * 2);
+    bump.fill();
+  });
 
+  // Repeating integrated circuits with visible pins and orientation marks.
+  const integratedCircuits: Array<[number, number, number, number]> = [
+    [248, 310, 148, 104],
+    [602, 548, 184, 126],
+    [748, 86, 132, 92],
+    [94, 776, 138, 98],
+  ];
+  integratedCircuits.forEach(([x, y, width, height], icIndex) => {
+    color.fillStyle = 'rgba(7, 15, 14, 0.96)';
+    color.fillRect(x, y, width, height);
+    color.strokeStyle = 'rgba(187, 207, 198, 0.34)';
+    color.lineWidth = 3;
+    color.strokeRect(x + 3, y + 3, width - 6, height - 6);
+    const pinCount = Math.max(6, Math.floor(width / 22));
+    color.fillStyle = '#aeb8b2';
+    bump.fillStyle = '#e0e0e0';
+    for (let pin = 0; pin < pinCount; pin++) {
+      const pinX = x + 8 + pin * ((width - 16) / (pinCount - 1));
+      color.fillRect(pinX - 3, y - 11, 6, 11);
+      color.fillRect(pinX - 3, y + height, 6, 11);
+      bump.fillRect(pinX - 3, y - 11, 6, height + 22);
+    }
+    color.fillStyle = '#d8ddd9';
+    color.beginPath();
+    color.arc(x + 17, y + 17, 5, 0, Math.PI * 2);
+    color.fill();
+    color.font = 'bold 15px sans-serif';
+    color.fillText(`IT${icIndex + 1}`, x + 31, y + 23);
+    bump.fillStyle = '#272727';
+    bump.fillRect(x, y, width, height);
+    roughness.fillStyle = '#585858';
+    roughness.fillRect(x, y, width, height);
+  });
+
+  // Small SMD resistors and capacitors add scale when zooming into a disk.
+  for (let index = 0; index < 34; index++) {
+    const x = 34 + ((index * 83) % 930);
+    const y = 38 + ((index * 137) % 920);
+    const vertical = index % 3 === 0;
+    const width = vertical ? 12 : 30;
+    const height = vertical ? 30 : 12;
+    color.fillStyle = index % 2 === 0 ? '#b8a477' : '#71847c';
+    color.fillRect(x, y, width, height);
+    color.fillStyle = '#c8c4ae';
+    if (vertical) {
+      color.fillRect(x, y, width, 4);
+      color.fillRect(x, y + height - 4, width, 4);
+    } else {
+      color.fillRect(x, y, 4, height);
+      color.fillRect(x + width - 4, y, 4, height);
+    }
+    bump.fillStyle = '#bcbcbc';
+    bump.fillRect(x, y, width, height);
+  }
+
+  // Sparse silkscreen reference marks.
+  color.strokeStyle = 'rgba(226, 235, 227, 0.58)';
+  color.lineWidth = 3;
+  color.strokeRect(26, 26, 972, 972);
+  color.fillStyle = 'rgba(235, 241, 236, 0.72)';
+  color.font = 'bold 19px sans-serif';
+  color.fillText('CMS IT  •  PHASE-2', 34, 1010);
+
+  const makeTexture = (canvas: HTMLCanvasElement, srgb = false): THREE.CanvasTexture => {
+    const texture = new THREE.CanvasTexture(canvas);
+    if (srgb) {
+      texture.colorSpace = THREE.SRGBColorSpace;
+    }
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(2.25, 2.25);
+    texture.minFilter = THREE.LinearMipmapLinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    texture.generateMipmaps = true;
+    return texture;
+  };
+  return {
+    color: makeTexture(colorCanvas, true),
+    bump: makeTexture(bumpCanvas),
+    roughness: makeTexture(roughnessCanvas),
+  };
+}
+
+function studioBackgroundTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024;
+  canvas.height = 1024;
+  const context = canvas.getContext('2d');
+  if (context) {
+    const gradient = context.createRadialGradient(460, 390, 40, 512, 512, 760);
+    gradient.addColorStop(0, '#f7f9fc');
+    gradient.addColorStop(0.52, '#e7edf4');
+    gradient.addColorStop(1, '#cfd9e4');
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, canvas.width, canvas.height);
+  }
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(3, 3);
   return texture;
 }
 
@@ -284,8 +442,11 @@ function halfAnnulusGeometry(
 
   const geometry = new THREE.ExtrudeGeometry(shape, {
     depth,
-    bevelEnabled: false,
-    curveSegments: 64,
+    bevelEnabled: true,
+    bevelSize: Math.min(0.006, depth * 0.12),
+    bevelThickness: Math.min(0.004, depth * 0.1),
+    bevelSegments: 2,
+    curveSegments: 128,
     steps: 1,
   });
   geometry.translate(0, 0, -depth / 2);
@@ -354,7 +515,8 @@ export class DetectorScene {
   private readonly scene = new THREE.Scene();
   private readonly camera = new THREE.PerspectiveCamera(38, 1, 0.01, 100);
   private readonly renderer: THREE.WebGLRenderer;
-  private readonly circuitTexture: THREE.CanvasTexture;
+  private readonly boardTextures: BoardTextures;
+  private readonly backgroundTexture: THREE.CanvasTexture;
   private readonly controls: OrbitControls;
   private readonly raycaster = new THREE.Raycaster();
   private readonly pointer = new THREE.Vector2();
@@ -384,13 +546,16 @@ export class DetectorScene {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.15;
-    this.renderer.setClearColor(0xe7ecf2, 1);
-    this.circuitTexture = circuitBoardTexture();
-    this.circuitTexture.anisotropy = Math.min(
-      8,
-      this.renderer.capabilities.getMaxAnisotropy()
-    );
+    this.renderer.toneMappingExposure = 1.08;
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.backgroundTexture = studioBackgroundTexture();
+    this.scene.background = this.backgroundTexture;
+    this.boardTextures = circuitBoardTextures();
+    const anisotropy = Math.min(16, this.renderer.capabilities.getMaxAnisotropy());
+    Object.values(this.boardTextures).forEach((texture) => {
+      texture.anisotropy = anisotropy;
+    });
     this.container.appendChild(this.renderer.domElement);
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
@@ -432,17 +597,45 @@ export class DetectorScene {
   }
 
   private addLighting(): void {
-    this.scene.add(new THREE.HemisphereLight(0xffffff, 0x8794a5, 2.15));
-    this.scene.add(new THREE.AmbientLight(0xffffff, 0.72));
-    const key = new THREE.DirectionalLight(0xffffff, 2.4);
-    key.position.set(4, 5, 6);
+    this.scene.add(new THREE.HemisphereLight(0xf8fbff, 0x607080, 1.55));
+    this.scene.add(new THREE.AmbientLight(0xffffff, 0.42));
+    const key = new THREE.DirectionalLight(0xfff9ef, 2.75);
+    key.position.set(4.5, 6.5, 7.5);
+    key.castShadow = true;
+    key.shadow.mapSize.set(2048, 2048);
+    key.shadow.camera.near = 0.1;
+    key.shadow.camera.far = 24;
+    key.shadow.camera.left = -5;
+    key.shadow.camera.right = 5;
+    key.shadow.camera.top = 5;
+    key.shadow.camera.bottom = -5;
+    key.shadow.bias = -0.00015;
     this.scene.add(key);
-    const fill = new THREE.DirectionalLight(0xdce7f2, 1.15);
-    fill.position.set(-5, -2, -4);
+    const fill = new THREE.DirectionalLight(0xdcecff, 1.3);
+    fill.position.set(-6, 1.5, -4.5);
     this.scene.add(fill);
-    const rim = new THREE.DirectionalLight(0xffffff, 0.85);
-    rim.position.set(-2, 4, -6);
+    const rim = new THREE.DirectionalLight(0xbad5e8, 1.05);
+    rim.position.set(-2.5, 5, -7);
     this.scene.add(rim);
+    const lowerFill = new THREE.PointLight(0xffffff, 0.7, 18, 2);
+    lowerFill.position.set(0, -5, 2);
+    this.scene.add(lowerFill);
+  }
+
+  private boardMaterial(): THREE.MeshPhysicalMaterial {
+    return new THREE.MeshPhysicalMaterial({
+      color: 0xffffff,
+      map: this.boardTextures.color,
+      bumpMap: this.boardTextures.bump,
+      bumpScale: 0.018,
+      roughnessMap: this.boardTextures.roughness,
+      metalness: 0.07,
+      roughness: 0.62,
+      clearcoat: 0.18,
+      clearcoatRoughness: 0.68,
+      side: THREE.DoubleSide,
+      depthWrite: true,
+    });
   }
 
   private addSupportStructures(): void {
@@ -475,24 +668,18 @@ export class DetectorScene {
           radius * 0.975,
           radius * 0.975,
           Math.max(0.05, zMax - zMin),
-          48,
+          96,
           1,
           true,
           thetaStart,
           Math.PI
         );
-        const material = new THREE.MeshStandardMaterial({
-          color: 0xffffff,
-          map: this.circuitTexture,
-          metalness: 0.04,
-          roughness: 0.72,
-          transparent: false,
-          side: THREE.DoubleSide,
-          depthWrite: true,
-        });
+        const material = this.boardMaterial();
         const mesh = new THREE.Mesh(geometry, material);
         mesh.rotation.x = Math.PI / 2;
         mesh.position.z = (zMin + zMax) / 2;
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
         mesh.renderOrder = 0;
         this.supports.push({ mesh, visibilityKey, sectionKey });
         this.scene.add(mesh);
@@ -516,13 +703,7 @@ export class DetectorScene {
         thetaStart,
         0.035
       );
-      const material = new THREE.MeshStandardMaterial({
-        color: 0xffffff,
-        map: this.circuitTexture,
-        metalness: 0.04,
-        roughness: 0.7,
-        side: THREE.DoubleSide,
-      });
+      const material = this.boardMaterial();
       const mesh = new THREE.Mesh(geometry, material);
       const basePositions = sectionModules.map((module) => {
         const direction = module.side === '+z' ? 1 : -1;
@@ -532,6 +713,8 @@ export class DetectorScene {
       mesh.position.z =
         basePositions.reduce((sum, position) => sum + position, 0)
         / basePositions.length;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
       mesh.renderOrder = 0;
       this.supports.push({ mesh, visibilityKey, sectionKey });
       this.scene.add(mesh);
@@ -581,6 +764,7 @@ export class DetectorScene {
       statusColors.needsUpdate = true;
 
       mesh.renderOrder = 2;
+      mesh.castShadow = true;
       this.elements.set(key, {
         mesh,
         statusColors,
@@ -859,7 +1043,8 @@ export class DetectorScene {
     }
     (this.outline.geometry as THREE.BufferGeometry).dispose();
     (this.outline.material as THREE.Material).dispose();
-    this.circuitTexture.dispose();
+    Object.values(this.boardTextures).forEach((texture) => texture.dispose());
+    this.backgroundTexture.dispose();
     this.renderer.dispose();
     this.renderer.domElement.remove();
   }

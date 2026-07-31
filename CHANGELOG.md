@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.12
+
+- Upgrade detector supports to a high-resolution procedural PCB material with
+  traces, vias, integrated circuits, pins, SMD components and surface relief.
+- Add a soft studio background, balanced multi-point lighting, shadows,
+  higher-resolution curved surfaces and subtle bevelled disk edges.
+
 ## 0.1.11
 
 - Draw explicit high-contrast chip dividers on module surfaces without
