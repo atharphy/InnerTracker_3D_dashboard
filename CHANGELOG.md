@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.9
+
+- Render live chip status with unlit, tone-mapping-independent materials so
+  good and bad colours remain visible from every camera angle.
+
 ## 0.1.8
 
 - Restore the system-test hardware mapping to TBPX Layer 3 module position 1.

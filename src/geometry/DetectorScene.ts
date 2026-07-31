@@ -487,13 +487,14 @@ export class DetectorScene {
       const [visibilityKey, sectionKey, _shapeKey, chipKey] = key.split('|');
       const elementModules = cells.map((cell) => cell.module);
       const chipIndices = cells.map((cell) => cell.chipIndex);
-      const material = new THREE.MeshStandardMaterial({
+      // Monitoring status is categorical information, so preserve the exact
+      // instance colour independently of camera angle and scene lighting.
+      // The surrounding PCB supports retain their shaded standard material.
+      const material = new THREE.MeshBasicMaterial({
         color: 0xffffff,
         vertexColors: true,
-        transparent: false,
         side: THREE.DoubleSide,
-        metalness: 0.08,
-        roughness: 0.38,
+        toneMapped: false,
       });
       const moduleGeometry = chipGeometries(elementModules[0])[Number(chipKey)];
       const mesh = new THREE.InstancedMesh(moduleGeometry, material, elementModules.length);
