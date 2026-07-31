@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.15
+
+- Replace the repeated support texture with deterministic non-repeating macro
+  PCB windows for each barrel and disk section.
+- Scatter vias and SMD components irregularly to remove visible grid patterns.
+
 ## 0.1.14
 
 - Add explicit Rotate and Move camera modes while preserving wheel zoom and

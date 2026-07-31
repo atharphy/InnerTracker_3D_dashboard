@@ -299,12 +299,16 @@ function circuitBoardTextures(): BoardTextures {
   });
 
   // Plated vias and test pads.
-  const vias: Array<[number, number, number]> = [];
-  for (let row = 0; row < 5; row++) {
-    for (let column = 0; column < 7; column++) {
-      vias.push([70 + column * 148 + (row % 2) * 28, 64 + row * 205, (row + column) % 3 === 0 ? 10 : 7]);
-    }
-  }
+  let randomState = 0x5f3759df;
+  const random = (): number => {
+    randomState = (1664525 * randomState + 1013904223) >>> 0;
+    return randomState / 0x100000000;
+  };
+  const vias: Array<[number, number, number]> = Array.from({ length: 46 }, () => [
+    28 + random() * 968,
+    28 + random() * 968,
+    random() > 0.76 ? 10 : 6,
+  ]);
   vias.forEach(([x, y, radius]) => {
     color.fillStyle = '#d5b55b';
     color.beginPath();
@@ -355,9 +359,9 @@ function circuitBoardTextures(): BoardTextures {
   });
 
   // Small SMD resistors and capacitors add scale when zooming into a disk.
-  for (let index = 0; index < 34; index++) {
-    const x = 34 + ((index * 83) % 930);
-    const y = 38 + ((index * 137) % 920);
+  for (let index = 0; index < 42; index++) {
+    const x = 28 + random() * 946;
+    const y = 28 + random() * 946;
     const vertical = index % 3 === 0;
     const width = vertical ? 12 : 30;
     const height = vertical ? 30 : 12;
@@ -390,7 +394,9 @@ function circuitBoardTextures(): BoardTextures {
     }
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(2.25, 2.25);
+    // The texture is a complete macro PCB surface, not a tile. Individual
+    // detector supports select deterministic windows from this canvas.
+    texture.repeat.set(1, 1);
     texture.minFilter = THREE.LinearMipmapLinearFilter;
     texture.magFilter = THREE.LinearFilter;
     texture.generateMipmaps = true;
@@ -401,6 +407,33 @@ function circuitBoardTextures(): BoardTextures {
     bump: makeTexture(bumpCanvas),
     roughness: makeTexture(roughnessCanvas),
   };
+}
+
+function supportTextureWindow(
+  geometry: THREE.BufferGeometry,
+  key: string
+): void {
+  const uv = geometry.getAttribute('uv');
+  if (!(uv instanceof THREE.BufferAttribute)) {
+    return;
+  }
+  let hash = 2166136261;
+  for (const character of key) {
+    hash ^= character.charCodeAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+  const sampleWidth = 0.7 + ((hash >>> 8) & 0xff) / 255 * 0.12;
+  const sampleHeight = 0.7 + ((hash >>> 16) & 0xff) / 255 * 0.12;
+  const offsetX = (hash & 0xff) / 255 * (1 - sampleWidth);
+  const offsetY = ((hash >>> 24) & 0xff) / 255 * (1 - sampleHeight);
+  for (let index = 0; index < uv.count; index++) {
+    uv.setXY(
+      index,
+      offsetX + uv.getX(index) * sampleWidth,
+      offsetY + uv.getY(index) * sampleHeight
+    );
+  }
+  uv.needsUpdate = true;
 }
 
 function studioBackgroundTexture(): THREE.CanvasTexture {
@@ -679,6 +712,7 @@ export class DetectorScene {
           thetaStart,
           Math.PI
         );
+        supportTextureWindow(geometry, compositeKey);
         const material = this.boardMaterial();
         const mesh = new THREE.Mesh(geometry, material);
         mesh.rotation.x = Math.PI / 2;
@@ -708,6 +742,7 @@ export class DetectorScene {
         thetaStart,
         0.035
       );
+      supportTextureWindow(geometry, compositeKey);
       const material = this.boardMaterial();
       const mesh = new THREE.Mesh(geometry, material);
       const basePositions = sectionModules.map((module) => {
