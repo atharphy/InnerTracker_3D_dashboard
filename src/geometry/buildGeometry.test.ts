@@ -1,4 +1,4 @@
-import { buildDetectorGeometry } from './buildGeometry';
+import { buildDetectorGeometry, detectorModuleShapeKey } from './buildGeometry';
 import { DEFAULT_GEOMETRY } from './config';
 
 describe('buildDetectorGeometry', () => {
@@ -136,6 +136,23 @@ describe('buildDetectorGeometry', () => {
     expect(ringRatios.every((ratio, index) =>
       index === 0 || ratio > ringRatios[index - 1]
     )).toBe(true);
+  });
+
+  it('keeps different disk rings in different instanced geometry groups', () => {
+    const tepxDiskOne = modules.filter((module) =>
+      module.subdetector === 'TEPX'
+      && module.side === '+z'
+      && module.disk === 1
+      && module.half === 'upper'
+    );
+    const ringOne = tepxDiskOne.find((module) => module.ring === 1)!;
+    const anotherRingOne = tepxDiskOne.find(
+      (module) => module.ring === 1 && module.id !== ringOne.id
+    )!;
+    const ringFive = tepxDiskOne.find((module) => module.ring === 5)!;
+
+    expect(detectorModuleShapeKey(ringOne)).toBe(detectorModuleShapeKey(anotherRingOne));
+    expect(detectorModuleShapeKey(ringOne)).not.toBe(detectorModuleShapeKey(ringFive));
   });
 
   it('uses the exact outer chord width for every disk wedge', () => {

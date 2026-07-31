@@ -3,6 +3,17 @@ import { ModuleDescriptor, Subdetector } from '../types';
 
 const TWO_PI = Math.PI * 2;
 
+/**
+ * Modules may share an InstancedMesh only when their underlying cell geometry
+ * is identical. Disk trapezoids change with radius, so the ring is part of the
+ * shape identity.
+ */
+export function detectorModuleShapeKey(module: ModuleDescriptor): string {
+  return module.subdetector === 'TBPX'
+    ? module.moduleType
+    : `ring-${module.ring}-${module.moduleType}`;
+}
+
 function barrelModules(config: DetectorGeometryConfig): ModuleDescriptor[] {
   const modules: ModuleDescriptor[] = [];
 

@@ -1,6 +1,6 @@
 {
   "name": "cmsit-inner-tracker-3d-panel",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Interactive 3D Inner Tracker detector panel for Grafana",
   "scripts": {
     "build": "webpack -c ./.config/webpack/webpack.config.ts --env production",

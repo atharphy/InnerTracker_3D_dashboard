@@ -8,6 +8,7 @@ import {
   VisibilityState,
 } from '../types';
 import { measurementColor } from '../data/measurements';
+import { detectorModuleShapeKey } from './buildGeometry';
 
 interface ElementMesh {
   mesh: THREE.InstancedMesh;
@@ -458,7 +459,12 @@ export class DetectorScene {
     const grouped = new Map<string, Array<{ module: ModuleDescriptor; chipIndex: number }>>();
     for (const module of this.modules) {
       chipGeometries(module).forEach((_geometry, chipIndex) => {
-        const key = `${module.visibilityKey}|${module.sectionKey}|${chipIndex}`;
+        // Disk rings have different polar trapezoids. Keep each ring in a
+        // separate instanced mesh so an inner-ring geometry is never reused
+        // for modules farther out on the disk.
+        const shapeKey = detectorModuleShapeKey(module);
+        const key =
+          `${module.visibilityKey}|${module.sectionKey}|${shapeKey}|${chipIndex}`;
         const existing = grouped.get(key) ?? [];
         existing.push({ module, chipIndex });
         grouped.set(key, existing);
@@ -466,7 +472,7 @@ export class DetectorScene {
     }
 
     for (const [key, cells] of grouped) {
-      const [visibilityKey, sectionKey, chipKey] = key.split('|');
+      const [visibilityKey, sectionKey, _shapeKey, chipKey] = key.split('|');
       const elementModules = cells.map((cell) => cell.module);
       const chipIndices = cells.map((cell) => cell.chipIndex);
       const material = new THREE.MeshStandardMaterial({
